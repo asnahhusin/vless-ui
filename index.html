@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>VLESS Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+@keyframes lightning-flash {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  20% { transform: translateY(-2px) scale(1.05); }
+  40% { transform: translateY(2px) scale(0.95); opacity: 0.8; }
+  60% { transform: translateY(-1px) scale(1.02); }
+  80% { transform: translateY(1px) scale(0.98); }
+}
+
+.animate-lightning {
+  animation: lightning-flash 0.8s infinite ease-in-out;
+}
+</style>
+
+</head>
+
+<body class="bg-white text-black font-mono flex items-center justify-center min-h-screen">
+
+<div class="w-full max-w-lg border border-black p-6">
+
+    <!-- ICON -->
+    <div class="flex justify-center mb-4">
+        <div class="w-16 h-16 border-2 border-black flex items-center justify-center bg-yellow-300">
+
+            <svg class="w-8 h-8 text-black animate-lightning"
+                 viewBox="0 0 24 24"
+                 fill="currentColor">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+
+        </div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="text-center mb-4">
+        <div class="text-xl font-black tracking-widest uppercase">
+            VLESS PANEL
+        </div>
+        <div class="text-[10px] opacity-60 uppercase tracking-widest">
+            MULTI REGION SYSTEM
+        </div>
+    </div>
+
+    <!-- REGION BUTTONS -->
+    <div class="mb-4">
+
+        <div class="text-[10px] uppercase opacity-60 mb-2">REGION</div>
+
+        <div class="grid grid-cols-3 gap-2">
+
+    <button id="btnID" onclick="setRegion('ID')" class="border border-black py-2 text-[11px] bg-yellow-300">ID</button>
+
+    <button id="btnSG" onclick="setRegion('SG')" class="border border-black py-2 text-[11px]">SG</button>
+
+    <button id="btnMY" onclick="setRegion('MY')" class="border border-black py-2 text-[11px]">MY</button>
+
+    <button id="btnKR" onclick="setRegion('KR')" class="border border-black py-2 text-[11px]">KR</button>
+
+    <button id="btnUS" onclick="setRegion('US')" class="border border-black py-2 text-[11px]">US</button>
+
+    <button id="btnJP" onclick="setRegion('JP')" class="border border-black py-2 text-[11px]">JP</button>
+
+</div>
+    </div>
+
+    <!-- CREATE BUTTON -->
+    <button onclick="generate()"
+        class="w-full border border-black py-3 uppercase tracking-widest font-bold bg-yellow-300 hover:bg-black hover:text-white transition">
+        Create Account
+    </button>
+
+    <!-- VLESS -->
+    <div class="mt-6">
+        <div class="text-[10px] uppercase opacity-60 mb-2">VLESS CONFIG</div>
+
+        <div class="border border-black p-3 flex justify-between items-center">
+            <div id="vless" class="text-[11px] break-all">-</div>
+
+            <button onclick="copyVless()"
+                class="ml-2 border border-black px-3 py-1 text-[10px] uppercase bg-yellow-300 hover:bg-black hover:text-white">
+                Copy
+            </button>
+        </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="mt-6 space-y-4">
+
+        <!-- UUID -->
+        <div>
+            <div class="text-[10px] uppercase opacity-60 mb-1">UUID</div>
+
+            <div class="border border-black p-3 flex justify-between items-center">
+                <div id="uuid" class="text-[11px] break-all">-</div>
+
+                <button onclick="copyUUID()"
+                    class="border border-black px-3 py-1 text-[10px] uppercase bg-yellow-300 hover:bg-black hover:text-white">
+                    Copy
+                </button>
+            </div>
+        </div>
+
+        <!-- PATH -->
+        <div>
+            <div class="text-[10px] uppercase opacity-60 mb-1">PATH</div>
+            <div id="path" class="border border-black p-3 text-[11px]">-</div>
+        </div>
+
+        <!-- SERVER -->
+        <div>
+            <div class="text-[10px] uppercase opacity-60 mb-1">SERVER</div>
+            <div id="server" class="border border-black p-3 text-[11px]">-</div>
+
+            <div class="mt-3 text-[10px] uppercase opacity-60">
+                Total Create Account:
+                <span id="counter" class="font-bold">0</span>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let region = "ID";
+
+let lastUUID = "";
+let lastVless = "";
+
+// counter
+let count = localStorage.getItem("create_count") || 0;
+document.getElementById("counter").innerText = count;
+
+function setRegion(r) {
+    region = r;
+
+    const all = ["ID","SG","MY","KR","US","JP"];
+
+    all.forEach(code => {
+        const el = document.getElementById("btn"+code);
+        if (!el) return;
+
+        el.classList.remove("bg-yellow-300");
+    });
+
+    document.getElementById("btn"+r).classList.add("bg-yellow-300");
+}
+
+async function generate() {
+
+    count++;
+    localStorage.setItem("create_count", count);
+    document.getElementById("counter").innerText = count;
+
+    const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            cc: region,
+            isp: 0,
+            proto: "vless",
+            domain: 0,
+            bug: -1
+        })
+    });
+
+    const data = await res.json();
+
+    lastUUID = data.uuid;
+    lastVless = data.vless;
+
+    document.getElementById("uuid").innerText = data.uuid;
+    document.getElementById("vless").innerText = data.vless;
+    document.getElementById("path").innerText = data.path;
+    document.getElementById("server").innerText = data.server;
+}
+
+function copyUUID() {
+    navigator.clipboard.writeText(lastUUID);
+    alert("UUID copied!");
+}
+
+function copyVless() {
+    navigator.clipboard.writeText(lastVless);
+    alert("VLESS copied!");
+}
+
+</script>
+
+</body>
+</html>
